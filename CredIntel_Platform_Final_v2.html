@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CredIntel – FinTech Credit Risk Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --ci-blue:#1056b5;--ci-blue-mid:#1a8ad6;--ci-green:#2db057;
+  --ci-dark:#071220;--ci-navy:#0d1f38;
+  --grad1:linear-gradient(135deg,#1056b5 0%,#1a8ad6 50%,#2db057 100%);
+  --grad2:linear-gradient(160deg,#071220 0%,#0d1f38 100%);
+  --ink:#081828;--ink2:#253a55;--ink3:#607080;
+  --surf:#fff;--surf2:#eef4fc;--surf3:#d8e8f8;
+  --green:#2db057;--green-bg:#e5f7ed;
+  --red:#d42b20;--red-bg:#fce8e6;
+  --blue:#1056b5;--blue-bg:#e4eefb;
+  --amber:#c97000;--amber-bg:#fff3e0;
+  --teal:#077a68;--teal-bg:#e0f5f0;
+  --purple:#6941c6;--purple-bg:#f4f3ff;
+  --border:rgba(16,86,181,0.14);
+  --radius:12px;--radius-sm:8px;
+  --ff:'Plus Jakarta Sans',sans-serif;--mono:'DM Mono',monospace;
+  --shadow:0 2px 12px rgba(16,86,181,0.09);
+  --pp:0.85rem;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--ff);background:var(--surf2);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+
+/* ── HEADER ── */
+.header{background:var(--grad2);padding:0 0.85rem;display:flex;align-items:center;gap:8px;height:52px;position:sticky;top:0;z-index:200;box-shadow:0 2px 20px rgba(0,0,0,0.4);border-bottom:1px solid rgba(45,176,87,0.18);}
+.logo-wrap{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.logo-shield{width:32px;height:32px;flex-shrink:0;background:linear-gradient(145deg,#1056b5 0%,#1a8ad6 40%,#2db057 100%);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(16,86,181,0.4);}
+.logo-img{height:36px;width:auto;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.3));}
+.brand-name{font-size:16px;font-weight:800;letter-spacing:-0.3px;line-height:1.15;display:none;}
+.brand-name .cred{color:#fff;}
+.brand-name .intel{background:linear-gradient(90deg,#1a8ad6,#2db057);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.brand-tag{font-size:8.5px;font-family:var(--mono);color:rgba(255,255,255,0.35);letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.header-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.live-badge{display:flex;align-items:center;gap:4px;background:rgba(42,157,92,0.18);border:1px solid rgba(42,157,92,0.35);border-radius:20px;padding:3px 8px;font-size:10px;font-family:var(--mono);color:#4ade80;}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;animation:pulse 1.5s infinite;flex-shrink:0;}
+.live-txt{display:none;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.sim-toggle{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:7px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,0.75);cursor:pointer;font-family:var(--ff);font-weight:500;transition:all .2s;}
+.sim-toggle.active{background:rgba(255,140,0,0.18);border-color:rgba(255,140,0,0.4);color:#ffab40;}
+.toggle-sw{width:26px;height:15px;background:rgba(255,255,255,0.18);border-radius:8px;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle-sw.on{background:#ff8c00;}
+.toggle-sw::after{content:'';width:9px;height:9px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:left .2s;}
+.toggle-sw.on::after{left:14px;}
+.sim-lbl{display:none;}
+
+/* ── ALERTS ── */
+.alerts-wrap{padding:0.7rem var(--pp) 0;}
+.alerts-panel{background:var(--ci-dark);border-radius:var(--radius);padding:0.8rem 0.9rem;}
+.alerts-title{font-size:9.5px;font-family:var(--mono);color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px;}
+.alert-row{display:flex;align-items:flex-start;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.alert-row:last-child{border-bottom:none;}
+.alert-icon{font-size:12px;flex-shrink:0;margin-top:1px;}
+.alert-text{font-size:10.5px;font-family:var(--mono);color:rgba(255,255,255,0.7);flex:1;line-height:1.4;}
+.alert-text strong{color:#fff;}
+.alert-time{font-size:9px;color:rgba(255,255,255,0.25);font-family:var(--mono);flex-shrink:0;margin-top:1px;}
+
+/* ── TABS NAV ── */
+.tabs-nav{background:var(--surf);border-bottom:1px solid var(--border);padding:0 0.4rem;display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:52px;z-index:100;}
+.tabs-nav::-webkit-scrollbar{display:none;}
+.tab-btn{padding:10px 11px;border:none;background:transparent;font-family:var(--ff);font-size:11.5px;font-weight:600;color:var(--ink3);cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;transition:all .2s;display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.tab-btn .tab-emoji{font-size:12px;}
+.tab-btn.active{color:var(--ci-blue);border-bottom-color:var(--ci-blue);}
+
+/* ── PAGE CONTENT ── */
+.page{display:none;padding:var(--pp);padding-bottom:1.5rem;}
+.page.active{display:block;}
+
+/* ── KPI GRIDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:0.85rem;}
+.kpi-row-4{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-bottom:0.85rem;}
+.kpi{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.7rem;box-shadow:var(--shadow);}
+.kpi-label{font-size:9px;font-family:var(--mono);color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;}
+.kpi-val{font-size:15px;font-weight:800;letter-spacing:-0.2px;color:var(--ink);}
+.kpi-badge{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:20px;margin-top:3px;display:inline-flex;align-items:center;gap:3px;}
+.bg{background:var(--green-bg);color:var(--green);}
+.br{background:var(--red-bg);color:var(--red);}
+.bb{background:var(--blue-bg);color:var(--blue);}
+.ba{background:var(--amber-bg);color:var(--amber);}
+.bt{background:var(--teal-bg);color:var(--teal);}
+.bp{background:var(--purple-bg);color:var(--purple);}
+
+/* ── CARDS ── */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:0.9rem;box-shadow:var(--shadow);}
+.card-hd{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:0.7rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px;}
+.card-hd span{font-size:10px;font-family:var(--mono);color:var(--ink3);font-weight:400;}
+.two-col{display:grid;grid-template-columns:1fr;gap:0.7rem;margin-bottom:0.7rem;}
+.three-col{display:grid;grid-template-columns:1fr;gap:0.7rem;margin-bottom:0.7rem;}
+.chart-wrap{position:relative;width:100%;}
+.mb{margin-bottom:0.7rem;}
+
+/* ── ALERTS / INSIGHT ROWS ── */
+.ins-row{display:flex;gap:7px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border);}
+.ins-row:last-child{border-bottom:none;}
+.ins-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.ins-txt{font-size:11.5px;color:var(--ink2);line-height:1.5;}
+.ins-txt strong{color:var(--ink);font-weight:600;}
+
+/* ── PROGRESS BARS ── */
+.prog-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.prog-lbl{font-size:10px;font-family:var(--mono);color:var(--ink2);width:115px;flex-shrink:0;}
+.prog-bg{flex:1;height:6px;background:var(--surf3);border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+.prog-pct{font-size:10px;font-family:var(--mono);color:var(--ink3);width:28px;text-align:right;}
+
+/* ── FORMS ── */
+.form-row{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:9px;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+label{font-size:11px;font-family:var(--mono);color:var(--ink3);}
+input[type=range]{width:100%;accent-color:var(--ci-blue);}
+.range-row{display:flex;justify-content:space-between;font-size:10px;color:var(--ink3);font-family:var(--mono);margin-top:1px;}
+select,input[type=number]{background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 10px;font-size:14px;color:var(--ink);font-family:var(--ff);width:100%;}
+.btn-primary{width:100%;padding:13px;background:var(--grad1);color:#fff;border:none;border-radius:var(--radius);font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;transition:opacity .15s;margin-top:4px;}
+.btn-primary:active{opacity:0.82;}
+.result-box{border-radius:var(--radius);padding:0.9rem;margin-top:0.7rem;display:none;}
+.result-box.low{background:var(--green-bg);border:1.5px solid var(--green);}
+.result-box.high{background:var(--red-bg);border:1.5px solid var(--red);}
+.result-lbl{font-size:15px;font-weight:800;}
+.result-lbl.low{color:var(--green);}
+.result-lbl.high{color:var(--red);}
+.result-prob{font-size:11px;font-family:var(--mono);color:var(--ink3);margin-top:3px;}
+
+/* ── XAI BOX ── */
+.xai-box{background:var(--surf2);border-radius:9px;padding:0.8rem;margin-top:7px;}
+.xai-hd{font-size:10px;font-family:var(--mono);color:var(--ink3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:7px;}
+.xai-item{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.xai-bar{height:7px;border-radius:4px;transition:width .5s ease;}
+.xai-lbl{font-size:10px;color:var(--ink2);font-family:var(--mono);width:130px;flex-shrink:0;}
+.xai-pct{font-size:10px;font-family:var(--mono);color:var(--ink3);}
+
+/* ── SEGMENTS ── */
+.seg-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:0.7rem;}
+.seg-card{border-radius:var(--radius-sm);padding:0.75rem;border:1px solid var(--border);}
+.seg-card.diamond{background:var(--blue-bg);border-color:var(--blue);}
+.seg-card.frequent{background:var(--green-bg);border-color:var(--green);}
+.seg-card.lowact{background:var(--amber-bg);border-color:var(--amber);}
+.seg-card.midtier{background:var(--surf2);}
+.seg-name{font-size:11px;font-weight:700;margin-bottom:2px;}
+.seg-name.diamond{color:var(--blue);}
+.seg-name.frequent{color:var(--green);}
+.seg-name.lowact{color:var(--amber);}
+.seg-name.midtier{color:var(--ink2);}
+.seg-stat{font-size:10px;font-family:var(--mono);color:var(--ink3);margin-top:1px;}
+.seg-action{font-size:10px;color:var(--ink2);margin-top:5px;padding-top:5px;border-top:1px solid var(--border);line-height:1.4;}
+
+/* ── ACTION PANEL ── */
+.action-panel{background:var(--grad2);border-radius:var(--radius);padding:0.9rem;margin-bottom:0.7rem;}
+.action-hd{font-size:10px;font-family:var(--mono);color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+.action-hd::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.1);}
+.action-item{display:flex;align-items:flex-start;gap:7px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.action-item:last-child{border-bottom:none;}
+.action-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.action-content{flex:1;min-width:0;}
+.action-title{font-size:11px;font-weight:600;color:#fff;margin-bottom:2px;line-height:1.3;}
+.action-desc{font-size:10px;color:rgba(255,255,255,0.48);font-family:var(--mono);line-height:1.35;}
+.action-pri{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:20px;flex-shrink:0;margin-top:2px;}
+.pri-high{background:rgba(217,48,37,0.25);color:#ff8a80;}
+.pri-med{background:rgba(200,112,0,0.25);color:#ffcc80;}
+.pri-low{background:rgba(42,157,92,0.25);color:#80cbc4;}
+
+/* ── FUNNEL ── */
+.funnel-step{display:flex;align-items:center;gap:7px;padding:9px 0;border-bottom:1px solid var(--border);}
+.funnel-step:last-child{border-bottom:none;}
+.funnel-label{font-size:11.5px;font-weight:600;width:80px;flex-shrink:0;}
+.funnel-bar-wrap{flex:1;}
+.funnel-bar{height:28px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:11px;font-weight:700;color:#fff;min-width:36px;}
+.funnel-meta{font-size:10px;font-family:var(--mono);color:var(--ink3);width:58px;flex-shrink:0;text-align:right;}
+.conv-arrow{font-size:10px;font-family:var(--mono);color:var(--green);text-align:center;padding:1px 0;}
+
+/* ── SIMULATION ── */
+.sim-panel{background:linear-gradient(135deg,#1a0a3e 0%,#071220 100%);border-radius:var(--radius);padding:1rem;margin-bottom:0.7rem;border:1px solid rgba(105,65,198,0.28);}
+.sim-hd{font-size:10.5px;font-family:var(--mono);color:rgba(200,170,255,0.7);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.9rem;}
+.sim-slider-row{margin-bottom:0.9rem;}
+.sim-slider-lbl{display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:rgba(255,255,255,0.58);margin-bottom:5px;}
+.sim-slider-lbl span{color:#c084fc;font-weight:500;}
+input[type=range].sim-range{accent-color:#c084fc;width:100%;}
+.sim-output{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:0.9rem;}
+.sim-out-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.65rem;text-align:center;}
+.sim-out-val{font-size:17px;font-weight:800;color:#c084fc;}
+.sim-out-lbl{font-size:9px;font-family:var(--mono);color:rgba(255,255,255,0.38);margin-top:3px;text-transform:uppercase;letter-spacing:0.05em;}
+
+/* ── BENCHMARK TABLE ── */
+.bench-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.bench-table{width:100%;border-collapse:collapse;font-size:11px;min-width:420px;}
+.bench-table th{font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;color:var(--ink3);padding:6px 8px;text-align:left;border-bottom:2px solid var(--border);}
+.bench-table td{padding:8px 8px;border-bottom:1px solid var(--border);}
+.bench-table tr:last-child td{border-bottom:none;}
+.bench-table tr.you-row td{background:var(--blue-bg);font-weight:600;color:var(--blue);}
+.bench-val{font-weight:700;}
+
+/* ── PERSONA CARDS ── */
+.persona-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.persona-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);padding:0.8rem;box-shadow:var(--shadow);}
+.persona-avatar{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:7px;}
+.persona-name{font-size:12px;font-weight:700;margin-bottom:1px;}
+.persona-role{font-size:9.5px;font-family:var(--mono);color:var(--ink3);margin-bottom:6px;}
+.persona-score{display:flex;align-items:center;gap:5px;margin-bottom:5px;}
+.score-ring{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2.5px solid;}
+.persona-detail{font-size:9.5px;color:var(--ink3);font-family:var(--mono);margin-bottom:3px;}
+.persona-action{font-size:9.5px;color:var(--ink2);margin-top:6px;padding-top:5px;border-top:1px solid var(--border);line-height:1.4;}
+
+/* ── A/B TESTING ── */
+.ab-compare{display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;margin-bottom:0.7rem;}
+.ab-card{border-radius:var(--radius);padding:0.9rem;border:2px solid;}
+.ab-card.a{border-color:var(--blue);background:var(--blue-bg);}
+.ab-card.b{border-color:var(--green);background:var(--green-bg);}
+.ab-label{font-size:9px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:3px;}
+.ab-label.a{color:var(--blue);}
+.ab-label.b{color:var(--green);}
+.ab-price{font-size:20px;font-weight:800;margin-bottom:4px;}
+.ab-price.a{color:var(--blue);}
+.ab-price.b{color:var(--green);}
+.ab-metric{font-size:10.5px;font-family:var(--mono);color:var(--ink3);margin-bottom:2px;}
+.ab-metric strong{color:var(--ink);}
+
+/* ── RISK DONUT ── */
+.risk-donut-wrap{display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;}
+.risk-legend{flex:1;min-width:110px;}
+.risk-leg-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.risk-leg-lbl{font-size:11px;color:var(--ink2);}
+.risk-leg-val{font-size:11px;font-family:var(--mono);font-weight:600;margin-left:auto;}
+
+/* ── UNIT ECONOMICS ── */
+.ltv-cac-vis{display:flex;align-items:flex-end;gap:10px;padding:0.6rem 0;}
+.bar-block{text-align:center;flex:1;}
+.bar-rect{margin:0 auto;border-radius:5px 5px 0 0;}
+.bar-blbl{font-size:10px;font-family:var(--mono);color:var(--ink3);margin-top:4px;}
+.bar-bval{font-size:11px;font-weight:700;margin-top:2px;}
+.ratio-box{background:var(--surf2);border-radius:9px;padding:0.7rem;text-align:center;margin-top:0.7rem;}
+.ratio-val{font-size:24px;font-weight:800;color:var(--ci-blue);}
+.ratio-lbl{font-size:10px;font-family:var(--mono);color:var(--ink3);margin-top:2px;}
+
+/* ── CHURN ── */
+.churn-seg-row{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);}
+.churn-seg-row:last-child{border-bottom:none;}
+.churn-seg-name{font-size:11.5px;font-weight:600;width:95px;flex-shrink:0;}
+.churn-bar-bg{flex:1;height:8px;background:var(--surf3);border-radius:4px;overflow:hidden;}
+.churn-bar-fill{height:100%;border-radius:4px;}
+.churn-pct{font-size:11px;font-family:var(--mono);font-weight:600;width:34px;text-align:right;}
+.churn-risk{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:20px;flex-shrink:0;}
+
+/* ── TABLET 600px+ ── */
+@media(min-width:600px){
+  :root{--pp:1.1rem;}
+  .header{height:58px;padding:0 1.25rem;}
+  .logo-img{height:42px;}
+  .live-txt{display:inline;}
+  .sim-lbl{display:inline;}
+  .kpi-row{grid-template-columns:repeat(3,1fr);gap:9px;}
+  .kpi-val{font-size:17px;}
+  .two-col{grid-template-columns:1fr 1fr;gap:0.9rem;}
+  .form-row{grid-template-columns:1fr 1fr;}
+  .prog-lbl{width:130px;}
+  .xai-lbl{width:150px;}
+  .persona-grid{grid-template-columns:repeat(2,1fr);}
+}
+
+/* ── DESKTOP 900px+ ── */
+@media(min-width:900px){
+  :root{--pp:1.5rem;}
+  .header{height:64px;padding:0 2rem;}
+  .logo-img{height:48px;}
+  .tab-btn{padding:14px 18px;font-size:13px;gap:6px;}
+  .tabs-nav{padding:0 2rem;top:64px;}
+  .page{padding:1.5rem 2rem 2rem;}
+  .kpi-row{grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1.25rem;}
+  .kpi-row-4{grid-template-columns:repeat(4,1fr);gap:10px;}
+  .kpi{padding:1rem 1.1rem;}
+  .kpi-val{font-size:21px;}
+  .kpi-badge{font-size:10px;}
+  .two-col{gap:1rem;margin-bottom:1rem;}
+  .three-col{grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;}
+  .card{padding:1.25rem;}
+  .card-hd{font-size:13px;margin-bottom:1rem;}
+  .mb{margin-bottom:1rem;}
+  .prog-lbl{width:160px;}
+  .xai-lbl{width:190px;}
+  .persona-grid{grid-template-columns:repeat(4,1fr);}
+  .churn-seg-name{width:120px;}
+  .funnel-label{width:120px;}
+  .seg-grid{gap:10px;}
+  .ab-compare{gap:1rem;}
+  .sim-output{gap:10px;}
+}
+
+/* ── TINY PHONES <360px ── */
+@media(max-width:360px){
+  .brand-tag{display:none;}
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .seg-grid{grid-template-columns:1fr;}
+  .ab-compare{grid-template-columns:1fr;}
+  .persona-grid{grid-template-columns:1fr;}
+  .sim-output{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-wrap">
+    <img src="data:image/png;base64,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" class="logo-img" alt="CredIntel">
+    <div>
+      <div class="brand-name"><span class="cred">Cred</span><span class="intel">Intel</span></div>
+      <div class="brand-tag">Smart Credit Risk Intelligence for Modern Lending</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> Live Demo</div>
+    <button class="sim-toggle" id="sim-toggle-btn" onclick="toggleSimMode()">
+      <div class="toggle-sw" id="sim-sw"></div>
+      <span id="sim-toggle-txt">Simulate Market</span>
+    </button>
+  </div>
+</div>
+
+<!-- ALERTS PANEL -->
+<div class="alerts-wrap"><div class="alerts-panel" id="alerts-panel">
+  <div class="alerts-title">🔔 Live System Alerts</div>
+  <div class="alert-row"><div class="alert-icon">🚨</div><div class="alert-text"><strong>High-risk borrower detected</strong> — User #4821 · LTI 2.3 · Bad credit · Default prob 87%</div><div class="alert-time">Just now</div></div>
+  <div class="alert-row"><div class="alert-icon">⚠️</div><div class="alert-text"><strong>Rising default trend</strong> — Default rate is 27.5% in the credit sample (55 of 200 loans)</div><div class="alert-time">3 min ago</div></div>
+  <div class="alert-row"><div class="alert-icon">✅</div><div class="alert-text"><strong>Strong customer segment growth</strong> — High Spenders are 31% of users but 54% of spend</div><div class="alert-time">8 min ago</div></div>
+  <div class="alert-row"><div class="alert-icon">💡</div><div class="alert-text"><strong>LTV opportunity identified</strong> — 18 Low Activity users (9%) are re-engagement candidates</div><div class="alert-time">15 min ago</div></div>
+</div></div>
+
+<!-- TABS -->
+<div class="tabs-nav" id="main-tabs">
+  <button class="tab-btn active" onclick="switchTab('risk')">🛡️ Credit Risk</button>
+  <button class="tab-btn" onclick="switchTab('kpi')">📊 KPI Dashboard</button>
+  <button class="tab-btn" onclick="switchTab('unit')">💰 Unit Economics</button>
+  <button class="tab-btn" onclick="switchTab('portfolio')">📈 Loan Portfolio</button>
+  <button class="tab-btn" onclick="switchTab('funnel')">👤 Customer Funnel</button>
+  <button class="tab-btn" onclick="switchTab('seg')">🎯 Segmentation</button>
+  <button class="tab-btn" onclick="switchTab('txn')">🧾 Transactions</button>
+  <button class="tab-btn" onclick="switchTab('scenario')">📉 Scenario</button>
+  <button class="tab-btn" onclick="switchTab('benchmark')">📊 Benchmarking</button>
+  <button class="tab-btn" onclick="switchTab('ab')">🧪 A/B Testing</button>
+  <button class="tab-btn" onclick="switchTab('persona')">🧭 Personas</button>
+  <button class="tab-btn" onclick="switchTab('churn')">🔄 Churn</button>
+  <button class="tab-btn" onclick="switchTab('insights')">💡 Insights</button>
+</div>
+
+<!-- ====== KPI DASHBOARD ====== -->
+<div class="page" id="tab-kpi"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — trend charts on this tab are illustrative; endpoints match the dataset KPIs. Other figures are assumptions (see the workbook's Assumptions sheet).</div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total Users</div><div class="kpi-val" id="k-total">200</div><div class="kpi-badge bb">Dataset n=200</div></div>
+    <div class="kpi"><div class="kpi-label">Active Users</div><div class="kpi-val" id="k-active">157</div><div class="kpi-badge bg">78.5% active</div></div>
+    <div class="kpi"><div class="kpi-label">Default Rate</div><div class="kpi-val" id="k-default">27.5%</div><div class="kpi-badge br">55 defaults</div></div>
+    <div class="kpi"><div class="kpi-label">ARPU</div><div class="kpi-val" id="k-arpu">₹1,840</div><div class="kpi-badge bg">↑ 7%</div></div>
+    <div class="kpi"><div class="kpi-label">Loans Disbursed</div><div class="kpi-val" id="k-loans">₹87.3L</div><div class="kpi-badge bt">200 loans</div></div>
+    <div class="kpi"><div class="kpi-label">Net P&amp;L</div><div class="kpi-val" id="k-pnl">−₹20.4L</div><div class="kpi-badge br">Loss-making (illustr.)</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Monthly User Growth <span>Last 8 months</span></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="growthChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Revenue vs Loan Disbursement <span>₹ Lakhs</span></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="revLoanChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Default Rate Trend <span>Monthly %</span></div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="defaultTrendChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">P&amp;L Monthly <span>₹ Lakhs</span></div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="pnlChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="action-panel">
+    <div class="action-hd">🧠 What Should We Do?</div>
+    <div class="action-item">
+      <div class="action-icon" style="background:rgba(217,48,37,0.2);">🔻</div>
+      <div class="action-content"><div class="action-title">Tighten lending to Unemployed borrowers</div><div class="action-desc">Default rate 49.3% (34 of 69) — manual review and a loan-size cap</div></div>
+      <span class="action-pri pri-high">HIGH</span>
+    </div>
+    <div class="action-item">
+      <div class="action-icon" style="background:rgba(42,157,92,0.2);">📣</div>
+      <div class="action-content"><div class="action-title">Increase marketing to High LTV users (High Spenders)</div><div class="action-desc">LTV ₹22,400 — 3× CAC · Allocate 40% of Q2 marketing budget here</div></div>
+      <span class="action-pri pri-high">HIGH</span>
+    </div>
+    <div class="action-item">
+      <div class="action-icon" style="background:rgba(200,112,0,0.2);">💎</div>
+      <div class="action-content"><div class="action-title">Adjust pricing for premium plan — test ₹149 vs ₹99</div><div class="action-desc">Model predicts +18% conversion at ₹99 vs +₹1,200 ARPU at ₹149</div></div>
+      <span class="action-pri pri-med">MEDIUM</span>
+    </div>
+    <div class="action-item">
+      <div class="action-icon" style="background:rgba(14,116,144,0.2);">🔁</div>
+      <div class="action-content"><div class="action-title">Launch 30-day re-engagement offer for 18 low-activity users</div><div class="action-desc">Estimated LTV recovery: ₹2.9L · Cost: ₹0.3L · ROI: 870%</div></div>
+      <span class="action-pri pri-med">MEDIUM</span>
+    </div>
+    <div class="action-item">
+      <div class="action-icon" style="background:rgba(105,65,198,0.2);">📈</div>
+      <div class="action-content"><div class="action-title">Nudge Mid-Tier users into Frequent tier via gamification</div><div class="action-desc">90 Mid-Tier users · Even 20% conversion = ₹4.8L incremental annual revenue</div></div>
+      <span class="action-pri pri-low">LOW</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== UNIT ECONOMICS ====== -->
+<div class="page" id="tab-unit"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">CAC</div><div class="kpi-val">₹840</div><div class="kpi-badge ba">Acquisition cost</div></div>
+    <div class="kpi"><div class="kpi-label">LTV</div><div class="kpi-val">₹22,400</div><div class="kpi-badge bg">Lifetime value</div></div>
+    <div class="kpi"><div class="kpi-label">LTV:CAC Ratio</div><div class="kpi-val">26.7×</div><div class="kpi-badge bg">Excellent (&gt;3×)</div></div>
+    <div class="kpi"><div class="kpi-label">Payback Period</div><div class="kpi-val">5.4 mo</div><div class="kpi-badge bt">Healthy (&lt;12mo)</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">LTV vs CAC by Segment</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="ltvCacChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Unit Economics Visual</div>
+      <div class="ltv-cac-vis" id="ltv-vis">
+        <div class="bar-block">
+          <div class="bar-rect" style="height:220px;width:60px;background:var(--grad1);"></div>
+          <div class="bar-blbl">LTV</div>
+          <div class="bar-bval" style="color:var(--green)">₹22,400</div>
+        </div>
+        <div class="bar-block">
+          <div class="bar-rect" style="height:8px;width:60px;background:var(--red);"></div>
+          <div class="bar-blbl">CAC</div>
+          <div class="bar-bval" style="color:var(--red)">₹840</div>
+        </div>
+        <div class="bar-block">
+          <div class="bar-rect" style="height:120px;width:60px;background:var(--teal);"></div>
+          <div class="bar-blbl">ARPU/mo</div>
+          <div class="bar-bval" style="color:var(--teal)">₹1,840</div>
+        </div>
+      </div>
+      <div class="ratio-box">
+        <div class="ratio-val">26.7×</div>
+        <div class="ratio-lbl">LTV:CAC Ratio · Industry benchmark: 3× minimum</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">CAC by Acquisition Channel</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="cacChannelChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Payback Period by Segment</div>
+      <div style="padding-top:0.5rem;">
+        <div class="churn-seg-row">
+          <div class="churn-seg-name">High Spenders</div>
+          <div class="churn-bar-bg"><div class="churn-bar-fill" style="width:18%;background:var(--green);"></div></div>
+          <div class="churn-pct" style="color:var(--green)">2.2 mo</div>
+        </div>
+        <div class="churn-seg-row">
+          <div class="churn-seg-name">Frequent</div>
+          <div class="churn-bar-bg"><div class="churn-bar-fill" style="width:45%;background:var(--blue);"></div></div>
+          <div class="churn-pct" style="color:var(--blue)">5.4 mo</div>
+        </div>
+        <div class="churn-seg-row">
+          <div class="churn-seg-name">Mid-Tier</div>
+          <div class="churn-bar-bg"><div class="churn-bar-fill" style="width:65%;background:var(--amber);"></div></div>
+          <div class="churn-pct" style="color:var(--amber)">7.8 mo</div>
+        </div>
+        <div class="churn-seg-row">
+          <div class="churn-seg-name">Low Activity</div>
+          <div class="churn-bar-bg"><div class="churn-bar-fill" style="width:100%;background:var(--red);"></div></div>
+          <div class="churn-pct" style="color:var(--red)">14+ mo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== LOAN PORTFOLIO ====== -->
+<div class="page" id="tab-portfolio">
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Total Loans</div><div class="kpi-val">200</div><div class="kpi-badge bb">Active portfolio</div></div>
+    <div class="kpi"><div class="kpi-label">Total Disbursed</div><div class="kpi-val">₹87.3L</div><div class="kpi-badge bg">Credit dataset</div></div>
+    <div class="kpi"><div class="kpi-label">Default Rate</div><div class="kpi-val">27.5%</div><div class="kpi-badge br">55 defaults</div></div>
+    <div class="kpi"><div class="kpi-label">NPA Exposure</div><div class="kpi-val">₹30.9L</div><div class="kpi-badge ba">Defaulted principal</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Risk Distribution</div>
+      <div class="risk-donut-wrap">
+        <div class="chart-wrap" style="height:200px;width:200px;flex-shrink:0;"><canvas id="riskPieChart"></canvas></div>
+        <div class="risk-legend">
+          <div class="risk-leg-row"><div class="risk-dot" style="background:#2db057"></div><div class="risk-leg-lbl">Low Risk</div><div class="risk-leg-val" style="color:var(--green)">68%</div></div>
+          <div class="risk-leg-row"><div class="risk-dot" style="background:#1056b5"></div><div class="risk-leg-lbl">Moderate Risk</div><div class="risk-leg-val" style="color:var(--blue)">4%</div></div>
+          <div class="risk-leg-row"><div class="risk-dot" style="background:#c97000"></div><div class="risk-leg-lbl">High Risk</div><div class="risk-leg-val" style="color:var(--amber)">20%</div></div>
+          <div class="risk-leg-row"><div class="risk-dot" style="background:#d42b20"></div><div class="risk-leg-lbl">Very High Risk</div><div class="risk-leg-val" style="color:var(--red)">8%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Default Rate by Employment</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="segDefaultChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Loan Amount Distribution</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="loanDistChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">High Risk vs Low Risk Users</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="riskCompChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== CUSTOMER FUNNEL ====== -->
+<div class="page" id="tab-funnel">
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Visitors</div><div class="kpi-val">1,000</div><div class="kpi-badge bb">Monthly</div></div>
+    <div class="kpi"><div class="kpi-label">Signups</div><div class="kpi-val">200</div><div class="kpi-badge ba">20% CVR</div></div>
+    <div class="kpi"><div class="kpi-label">Active Users</div><div class="kpi-val">157</div><div class="kpi-badge bg">78.5% CVR</div></div>
+    <div class="kpi"><div class="kpi-label">Loan-ready (est.)</div><div class="kpi-val">64</div><div class="kpi-badge bt">40.5% CVR</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Conversion Funnel</div>
+      <div style="padding:0.5rem 0;">
+        <div class="funnel-step">
+          <div class="funnel-label">Visitors</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:var(--ci-blue);">1,000</div></div>
+          <div class="funnel-meta">—</div>
+        </div>
+        <div class="conv-arrow">↓ 20.0% converted</div>
+        <div class="funnel-step">
+          <div class="funnel-label">Signups</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:20%;background:#1a8ad6;">200</div></div>
+          <div class="funnel-meta">CVR: 20%</div>
+        </div>
+        <div class="conv-arrow">↓ 78.5% converted</div>
+        <div class="funnel-step">
+          <div class="funnel-label">Active Users</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:15.7%;background:var(--ci-green);">157</div></div>
+          <div class="funnel-meta">CVR: 78.5%</div>
+        </div>
+        <div class="conv-arrow">↓ 40.5% converted</div>
+        <div class="funnel-step">
+          <div class="funnel-label">Loan-ready (est.)</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:6.4%;background:#2db057;">64</div></div>
+          <div class="funnel-meta">CVR: 40.5%</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Funnel Drop-off Analysis</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="funnelChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-hd">Conversion Rate by Channel</div>
+    <div class="chart-wrap" style="height:200px;"><canvas id="channelCvrChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ====== CREDIT RISK ====== -->
+<div class="page active" id="tab-risk">
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Model Accuracy</div><div class="kpi-val">93.3%</div><div class="kpi-badge bg">Logistic Reg</div></div>
+    <div class="kpi"><div class="kpi-label">Precision</div><div class="kpi-val">83.3%</div><div class="kpi-badge bb">High Risk</div></div>
+    <div class="kpi"><div class="kpi-label">Recall</div><div class="kpi-val">93.8%</div><div class="kpi-badge bb">High Risk</div></div>
+    <div class="kpi"><div class="kpi-label">F1 Score</div><div class="kpi-val">0.882</div><div class="kpi-badge bg">Strong</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div>
+      <div class="card mb">
+        <div class="card-hd">Predict Borrower Risk</div>
+        <div class="form-row">
+          <div class="fg"><label>Age: <span id="age-out">35</span></label><input type="range" min="21" max="65" value="35" id="age-sl" oninput="document.getElementById('age-out').textContent=this.value;updateLTI()"><div class="range-row"><span>21</span><span>65</span></div></div>
+          <div class="fg"><label>Annual Income (₹): <span id="inc-out">50,000</span></label><input type="range" min="10000" max="150000" step="1000" value="50000" id="inc-sl" oninput="document.getElementById('inc-out').textContent=parseInt(this.value).toLocaleString('en-IN');updateLTI()"><div class="range-row"><span>₹10k</span><span>₹1.5L</span></div></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Loan Amount (₹): <span id="loan-out">25,000</span></label><input type="range" min="5000" max="100000" step="1000" value="25000" id="loan-sl" oninput="document.getElementById('loan-out').textContent=parseInt(this.value).toLocaleString('en-IN');updateLTI()"><div class="range-row"><span>₹5k</span><span>₹1L</span></div></div>
+          <div class="fg"><label>Loan-to-Income Ratio</label><div style="font-size:22px;font-weight:800;padding:8px 0;color:var(--ci-blue);" id="lti-ratio">0.50</div></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>Credit History</label><select id="credit-sel"><option value="good">Good</option><option value="average">Average</option><option value="bad">Bad</option></select></div>
+          <div class="fg"><label>Employment Status</label><select id="emp-sel"><option value="employed">Employed</option><option value="self">Self-Employed</option><option value="unemployed">Unemployed</option></select></div>
+        </div>
+        <button class="btn-primary" onclick="predictRisk()">Predict Risk →</button>
+        <div class="result-box" id="result-box">
+          <div class="result-lbl" id="result-label"></div>
+          <div class="result-prob" id="result-prob"></div>
+          <div class="xai-box" id="xai-box">
+            <div class="xai-hd">🤖 Why is this user risky? (Explainable AI)</div>
+            <div id="xai-items"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card mb">
+        <div class="card-hd">Feature Importance</div>
+        <div id="feature-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Default Rate by Credit History</div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="creditChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== SEGMENTATION ====== -->
+<div class="page" id="tab-seg">
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Total Users</div><div class="kpi-val">200</div><div class="kpi-badge bb">Segmented</div></div>
+    <div class="kpi"><div class="kpi-label">Segments</div><div class="kpi-val">4</div><div class="kpi-badge bg">Rule-based</div></div>
+    <div class="kpi"><div class="kpi-label">K-Means silhouette</div><div class="kpi-val">0.16</div><div class="kpi-badge ba">Weak clusters</div></div>
+    <div class="kpi"><div class="kpi-label">High Value Users</div><div class="kpi-val">31%</div><div class="kpi-badge bb">62 users</div></div>
+  </div>
+  <div class="two-col mb">
+    <div>
+      <div class="card mb">
+        <div class="card-hd">Spend Distribution by Segment</div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="spendChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Activity vs Balance</div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="bubbleChart"></canvas></div>
+      </div>
+    </div>
+    <div>
+      <div class="seg-grid">
+        <div class="seg-card diamond"><div class="seg-name diamond">High Spenders</div><div class="seg-stat">62 users · 31%</div><div class="seg-stat">Avg spend: ₹41,433/mo</div><div class="seg-action">Cross-sell SIPs & FDs. Premium cashback rewards.</div></div>
+        <div class="seg-card frequent"><div class="seg-name frequent">Frequent Users</div><div class="seg-stat">30 users · 15%</div><div class="seg-stat">Avg txns: 26/mo</div><div class="seg-action">Loyalty streaks. Boost referral programme.</div></div>
+        <div class="seg-card lowact"><div class="seg-name lowact">Low Activity</div><div class="seg-stat">18 users · 9%</div><div class="seg-stat">Login: 12 days/mo</div><div class="seg-action">Re-engagement push. Zero-fee 30-day offer.</div></div>
+        <div class="seg-card midtier"><div class="seg-name midtier">Mid-Tier</div><div class="seg-stat">90 users · 45%</div><div class="seg-stat">Avg spend: ₹15,844/mo</div><div class="seg-action">Tiered rewards. A/B test onboarding nudges.</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Segment Share</div>
+        <div class="chart-wrap" style="height:200px;"><canvas id="pieChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== TRANSACTIONS ====== -->
+<div class="page" id="tab-txn"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Total Transactions</div><div class="kpi-val">6,025</div><div class="kpi-badge bb">This month</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Txn Value</div><div class="kpi-val">₹796</div><div class="kpi-badge bg">Spend ÷ txns</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Frequency</div><div class="kpi-val">30.1/mo</div><div class="kpi-badge bt">Per user</div></div>
+    <div class="kpi"><div class="kpi-label">Top Category</div><div class="kpi-val">UPI Pay</div><div class="kpi-badge ba">34% share</div></div>
+  </div>
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Spending Categories</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="txnCatChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Transaction Frequency Distribution</div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="txnFreqChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card mb">
+    <div class="card-hd">Avg Transaction Value by Segment</div>
+    <div class="chart-wrap" style="height:200px;"><canvas id="txnSegChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ====== SCENARIO SIMULATION ====== -->
+<div class="page" id="tab-scenario"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Simulated Revenue</div><div class="kpi-val" id="sim-rev">₹10.5L</div><div class="kpi-badge bg">Base scenario</div></div>
+    <div class="kpi"><div class="kpi-label">Simulated Profit</div><div class="kpi-val" id="sim-profit">−₹20.4L</div><div class="kpi-badge bg">1-yr, illustrative</div></div>
+    <div class="kpi"><div class="kpi-label">NPA Exposure</div><div class="kpi-val" id="sim-npa">₹30.9L</div><div class="kpi-badge br">27.5% default</div></div>
+    <div class="kpi"><div class="kpi-label">Stress Level</div><div class="kpi-val" id="sim-stress">🟢 Low</div><div class="kpi-badge bg">Healthy</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="sim-panel">
+      <div class="sim-hd">⚙️ Market Condition Simulator</div>
+      <div class="sim-slider-row">
+        <div class="sim-slider-lbl">Interest Rate <span id="sl-int-val">12%</span></div>
+        <input type="range" class="sim-range" min="8" max="25" value="12" id="sl-int" oninput="updateSimulation()">
+      </div>
+      <div class="sim-slider-row">
+        <div class="sim-slider-lbl">Default Rate <span id="sl-def-val">8%</span></div>
+        <input type="range" class="sim-range" min="2" max="30" value="27" id="sl-def" oninput="updateSimulation()">
+      </div>
+      <div class="sim-slider-row">
+        <div class="sim-slider-lbl">User Growth Rate <span id="sl-grw-val">12%</span></div>
+        <input type="range" class="sim-range" min="-10" max="40" value="12" id="sl-grw" oninput="updateSimulation()">
+      </div>
+      <div class="sim-slider-row">
+        <div class="sim-slider-lbl">Avg Income Level <span id="sl-inc-val">₹50k</span></div>
+        <input type="range" class="sim-range" min="20" max="120" step="5" value="50" id="sl-inc" oninput="updateSimulation()">
+      </div>
+      <div class="sim-output">
+        <div class="sim-out-card"><div class="sim-out-val" id="s-rev">₹10.5L</div><div class="sim-out-lbl">Revenue</div></div>
+        <div class="sim-out-card"><div class="sim-out-val" id="s-profit">−₹20.4L</div><div class="sim-out-lbl">Profit</div></div>
+        <div class="sim-out-card"><div class="sim-out-val" id="s-npa">8.0%</div><div class="sim-out-lbl">NPA Rate</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Impact on Profit — Scenario Chart</div>
+      <div class="chart-wrap" style="height:300px;"><canvas id="scenarioChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== BENCHMARKING ====== -->
+<div class="page" id="tab-benchmark"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Your Default Rate</div><div class="kpi-val">27.5%</div><div class="kpi-badge br">Above industry avg</div></div>
+    <div class="kpi"><div class="kpi-label">Your CAC</div><div class="kpi-val">₹840</div><div class="kpi-badge bg">34% below avg</div></div>
+    <div class="kpi"><div class="kpi-label">Your LTV:CAC</div><div class="kpi-val">26.7×</div><div class="kpi-badge bg">8.9× above avg</div></div>
+    <div class="kpi"><div class="kpi-label">Overall Rank</div><div class="kpi-val">n/a</div><div class="kpi-badge bb">Not benchmarked</div></div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-hd">CredIntel vs Industry Benchmarks</div>
+    <div class="bench-wrap"><table class="bench-table">
+      <tr><th>Metric</th><th>CredIntel</th><th>Fintech Avg</th><th>Best in Class</th><th>Status</th></tr>
+      <tr class="you-row"><td><strong>Default Rate</strong></td><td class="bench-val">27.5%</td><td>12.6%</td><td>4.2%</td><td><span class="kpi-badge br">⚠️ Worse than avg</span></td></tr>
+      <tr><td>CAC</td><td class="bench-val" style="color:var(--green)">₹840</td><td>₹1,280</td><td>₹620</td><td><span class="kpi-badge bg">✅ Below avg</span></td></tr>
+      <tr><td>LTV</td><td class="bench-val" style="color:var(--green)">₹22,400</td><td>₹18,600</td><td>₹34,000</td><td><span class="kpi-badge bg">✅ Above avg</span></td></tr>
+      <tr><td>LTV:CAC Ratio</td><td class="bench-val" style="color:var(--green)">26.7×</td><td>17.8×</td><td>54.8×</td><td><span class="kpi-badge bg">✅ Above avg</span></td></tr>
+      <tr><td>ARPU/month</td><td class="bench-val" style="color:var(--green)">₹1,840</td><td>₹1,540</td><td>₹2,800</td><td><span class="kpi-badge bg">✅ Above avg</span></td></tr>
+      <tr><td>Payback Period</td><td class="bench-val" style="color:var(--amber)">5.4 mo</td><td>8.2 mo</td><td>3.1 mo</td><td><span class="kpi-badge bg">✅ Below avg</span></td></tr>
+      <tr><td>DAU/MAU Ratio</td><td class="bench-val" style="color:var(--amber)">41%</td><td>38%</td><td>68%</td><td><span class="kpi-badge ba">⚠️ Average</span></td></tr>
+      <tr><td>Churn Rate</td><td class="bench-val" style="color:var(--amber)">14%</td><td>18%</td><td>6%</td><td><span class="kpi-badge bg">✅ Below avg</span></td></tr>
+    </table></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Default Rate Comparison</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="benchDefaultChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">LTV:CAC Radar</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="benchRadarChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== A/B TESTING ====== -->
+<div class="page" id="tab-ab"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Test Status</div><div class="kpi-val">Active</div><div class="kpi-badge bt">14 days left</div></div>
+    <div class="kpi"><div class="kpi-label">Sample Size A</div><div class="kpi-val">400</div><div class="kpi-badge bb">Group A</div></div>
+    <div class="kpi"><div class="kpi-label">Sample Size B</div><div class="kpi-val">400</div><div class="kpi-badge bg">Group B</div></div>
+    <div class="kpi"><div class="kpi-label">Significance</div><div class="kpi-val">93.3%</div><div class="kpi-badge ba">Near threshold</div></div>
+  </div>
+
+  <div class="ab-compare mb">
+    <div class="ab-card a">
+      <div class="ab-label a">Variant A — Control</div>
+      <div class="ab-price a">₹149/mo</div>
+      <div class="ab-metric">Conversion Rate: <strong>9.2%</strong></div>
+      <div class="ab-metric">Revenue/user: <strong>₹149</strong></div>
+      <div class="ab-metric">Total Revenue: <strong>₹5,960/mo</strong></div>
+      <div class="ab-metric">Churn Rate: <strong>8.4%</strong></div>
+    </div>
+    <div class="ab-card b">
+      <div class="ab-label b">Variant B — Test</div>
+      <div class="ab-price b">₹99/mo</div>
+      <div class="ab-metric">Conversion Rate: <strong>18.4%</strong></div>
+      <div class="ab-metric">Revenue/user: <strong>₹99</strong></div>
+      <div class="ab-metric">Total Revenue: <strong>₹7,358/mo</strong></div>
+      <div class="ab-metric">Churn Rate: <strong>5.1%</strong></div>
+    </div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Conversion Rate Over Time</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="abConvChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Revenue Impact Comparison</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="abRevChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="action-panel">
+    <div class="action-hd">🎯 A/B Test Recommendation</div>
+    <div class="action-item">
+      <div class="action-icon" style="background:rgba(42,157,92,0.3);">✅</div>
+      <div class="action-content"><div class="action-title">Variant B (₹99) is the winner — 23.5% more monthly revenue</div><div class="action-desc">Despite lower price, 2× higher conversion drives net +₹1,398/mo revenue. Lower churn saves ₹840/mo in acquisition costs.</div></div>
+      <span class="action-pri pri-high">SHIP IT</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== PERSONAS ====== -->
+<div class="page" id="tab-persona"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="persona-grid mb">
+    <div class="persona-card">
+      <div class="persona-avatar" style="background:var(--blue-bg);">🎓</div>
+      <div class="persona-name">Aryan Shah</div>
+      <div class="persona-role">Student Borrower · Age 22</div>
+      <div class="persona-score">
+        <div class="score-ring" style="border-color:var(--amber);color:var(--amber);">62</div>
+        <div style="font-size:11px;color:var(--amber);font-family:var(--mono);">Medium Risk</div>
+      </div>
+      <div class="persona-detail">📍 Income: ₹8,000/mo (part-time)</div>
+      <div class="persona-detail">💳 Credit: No history</div>
+      <div class="persona-detail">📊 LTI Ratio: 1.8 (High)</div>
+      <div class="persona-detail">🔁 Txn Freq: 12/mo</div>
+      <div class="persona-action">⚠️ Cap loan at ₹10k. Offer credit-builder product. Monitor for 3 months before upgrade.</div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-avatar" style="background:var(--amber-bg);">🛵</div>
+      <div class="persona-name">Priya Nair</div>
+      <div class="persona-role">Gig Worker · Age 28</div>
+      <div class="persona-score">
+        <div class="score-ring" style="border-color:var(--red);color:var(--red);">78</div>
+        <div style="font-size:11px;color:var(--red);font-family:var(--mono);">High Risk</div>
+      </div>
+      <div class="persona-detail">📍 Income: ₹22,000/mo (variable)</div>
+      <div class="persona-detail">💳 Credit: Average</div>
+      <div class="persona-detail">📊 LTI Ratio: 2.1 (Very High)</div>
+      <div class="persona-detail">🔁 Txn Freq: 28/mo</div>
+      <div class="persona-action">🚨 Reduce loan exposure. Require income proof for 3 months. Offer flexible EMI plan.</div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-avatar" style="background:var(--green-bg);">💼</div>
+      <div class="persona-name">Rohan Mehta</div>
+      <div class="persona-role">Salaried Professional · Age 34</div>
+      <div class="persona-score">
+        <div class="score-ring" style="border-color:var(--green);color:var(--green);">18</div>
+        <div style="font-size:11px;color:var(--green);font-family:var(--mono);">Low Risk</div>
+      </div>
+      <div class="persona-detail">📍 Income: ₹75,000/mo</div>
+      <div class="persona-detail">💳 Credit: Good (720+)</div>
+      <div class="persona-detail">📊 LTI Ratio: 0.4 (Low)</div>
+      <div class="persona-detail">🔁 Txn Freq: 52/mo</div>
+      <div class="persona-action">✅ Offer premium plan + higher loan limit. Cross-sell SIP, FD. High LTV candidate.</div>
+    </div>
+    <div class="persona-card">
+      <div class="persona-avatar" style="background:var(--purple-bg);">👩‍💻</div>
+      <div class="persona-name">Sneha Kulkarni</div>
+      <div class="persona-role">Freelance Developer · Age 30</div>
+      <div class="persona-score">
+        <div class="score-ring" style="border-color:var(--teal);color:var(--teal);">42</div>
+        <div style="font-size:11px;color:var(--teal);font-family:var(--mono);">Moderate Risk</div>
+      </div>
+      <div class="persona-detail">📍 Income: ₹45,000/mo (variable)</div>
+      <div class="persona-detail">💳 Credit: Good</div>
+      <div class="persona-detail">📊 LTI Ratio: 0.9 (Moderate)</div>
+      <div class="persona-detail">🔁 Txn Freq: 38/mo</div>
+      <div class="persona-action">💡 Standard loan terms. Monitor income consistency. Good re-engagement candidate for premium.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">Risk Score Distribution Across Personas</div>
+    <div class="chart-wrap" style="height:200px;"><canvas id="personaChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ====== CHURN ====== -->
+<div class="page" id="tab-churn"><div style="background:#fff8e1;border:1px solid #f0d58a;color:#7a5a00;border-radius:8px;padding:6px 10px;margin-bottom:10px;font-size:11px;">Illustrative scenario — figures on this tab are assumptions (see the workbook's Assumptions sheet), not derived from the 200-record datasets.</div>
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">Churn Rate</div><div class="kpi-val">14%</div><div class="kpi-badge ba">Monthly</div></div>
+    <div class="kpi"><div class="kpi-label">At-Risk Users</div><div class="kpi-val">112</div><div class="kpi-badge br">Next 30 days</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue at Risk</div><div class="kpi-val">₹2.1L</div><div class="kpi-badge br">From churn</div></div>
+    <div class="kpi"><div class="kpi-label">Retention Rate</div><div class="kpi-val">86%</div><div class="kpi-badge bg">M-o-M</div></div>
+  </div>
+
+  <div class="two-col mb">
+    <div class="card">
+      <div class="card-hd">Churn Probability by Segment</div>
+      <div style="padding-top:0.5rem;">
+        <div class="churn-seg-row"><div class="churn-seg-name" style="color:var(--red)">Low Activity</div><div class="churn-bar-bg"><div class="churn-bar-fill" style="width:72%;background:var(--red);"></div></div><div class="churn-pct" style="color:var(--red)">72%</div><span class="churn-risk br">Critical</span></div>
+        <div class="churn-seg-row"><div class="churn-seg-name" style="color:var(--amber)">Mid-Tier</div><div class="churn-bar-bg"><div class="churn-bar-fill" style="width:28%;background:var(--amber);"></div></div><div class="churn-pct" style="color:var(--amber)">28%</div><span class="churn-risk ba">Medium</span></div>
+        <div class="churn-seg-row"><div class="churn-seg-name" style="color:var(--blue)">Frequent</div><div class="churn-bar-bg"><div class="churn-bar-fill" style="width:12%;background:var(--blue);"></div></div><div class="churn-pct" style="color:var(--blue)">12%</div><span class="churn-risk bb">Low</span></div>
+        <div class="churn-seg-row"><div class="churn-seg-name" style="color:var(--green)">High Spenders</div><div class="churn-bar-bg"><div class="churn-bar-fill" style="width:4%;background:var(--green);"></div></div><div class="churn-pct" style="color:var(--green)">4%</div><span class="churn-risk bg">Very Low</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Retention Curve <span>Months since signup</span></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="retentionChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb">
+    <div class="card-hd">Churn Trend — Last 6 Months</div>
+    <div class="chart-wrap" style="height:200px;"><canvas id="churnTrendChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ====== INSIGHTS ====== -->
+<div class="page" id="tab-insights">
+  <div class="kpi-row-4">
+    <div class="kpi"><div class="kpi-label">LTV Recovery Opp.</div><div class="kpi-val">15%</div><div class="kpi-badge ba">Low activity churn</div></div>
+    <div class="kpi"><div class="kpi-label">Top Risk Factor</div><div class="kpi-val">LTI</div><div class="kpi-badge br">Loan-to-income</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue Driver</div><div class="kpi-val">55%</div><div class="kpi-badge bb">High spenders</div></div>
+    <div class="kpi"><div class="kpi-label">Churn Window</div><div class="kpi-val">90d</div><div class="kpi-badge ba">Low activity</div></div>
+  </div>
+  <div class="two-col mb">
+    <div class="card"><div class="card-hd">Credit Risk Insights</div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--red)"></div><div class="ins-txt"><strong>LTI ratio and credit history are the joint strongest predictors</strong> (35% importance each). All 27 loans with LTI above 1.5 defaulted.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--red)"></div><div class="ins-txt"><strong>Bad credit history</strong> defaults at 48.1% vs 10.0% for good credit — 4.8× higher.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--amber)"></div><div class="ins-txt"><strong>Unemployed borrowers</strong> default at 49.3% vs 9.8% for employed — 5.0×.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--green)"></div><div class="ins-txt"><strong>Income ≥ ₹80,000 with good credit</strong> is the safest profile: 0 defaults in 36 loans.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--blue)"></div><div class="ins-txt"><strong>Age is the weakest predictor</strong> (2% importance) in this model.</div></div>
+    </div>
+    <div class="card"><div class="card-hd">Segmentation Insights</div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--blue)"></div><div class="ins-txt"><strong>High Spenders (31% of users)</strong> generate 54% of total spend.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--amber)"></div><div class="ins-txt"><strong>Low Activity users (9%)</strong> average 5 transactions a month — re-engagement candidates.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--green)"></div><div class="ins-txt"><strong>Frequent users (15%)</strong> log in ~26 days a month — loyalty streaks can lift their spend.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--blue)"></div><div class="ins-txt"><strong>Mid-Tier is the largest segment (45%)</strong> — small upward nudges deliver the biggest aggregate lift.</div></div>
+      <div class="ins-row"><div class="ins-dot" style="background:var(--green)"></div><div class="ins-txt"><strong>Wallet balance vs monthly spend correlation: 0.02</strong> — weak relationship.</div></div>
+    </div>
+  </div>
+  <div class="card mb">
+    <div class="card-hd">Income vs Default Rate</div>
+    <div class="chart-wrap" style="height:240px;"><canvas id="incomeChart"></canvas></div>
+  </div>
+</div>
+
+<script>
+// ===== THEME =====
+const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+const textColor = isDark ? '#a0b0c8' : '#2e4060';
+const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(18,82,163,0.07)';
+const C = {
+  blue:'#1056b5', green:'#2db057', red:'#d42b20',
+  amber:'#c97000', teal:'#077a68', purple:'#6941c6',
+  midBlue:'#1a8ad6',
+  blueA:'rgba(16,86,181,0.82)', greenA:'rgba(45,176,87,0.82)',
+  redA:'rgba(212,43,32,0.82)', amberA:'rgba(201,112,0,0.82)',
+  blueFill:'rgba(16,86,181,0.08)', greenFill:'rgba(45,176,87,0.08)', redFill:'rgba(212,43,32,0.08)',
+};
+Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+
+// ===== TAB SWITCHING =====
+function switchTab(t) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const tabs = ['risk','kpi','unit','portfolio','funnel','seg','txn','scenario','benchmark','ab','persona','churn','insights'];
+  const idx = tabs.indexOf(t);
+  document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  if(!chartInit[t]) { renderCharts(t); chartInit[t]=true; }
+}
+const chartInit = {kpi:false,unit:false,portfolio:false,funnel:false,risk:false,seg:false,txn:false,scenario:false,benchmark:false,ab:false,persona:false,churn:false,insights:false};
+
+// ===== SIM MODE =====
+let simMode = false;
+function toggleSimMode() {
+  simMode = !simMode;
+  document.getElementById('sim-sw').classList.toggle('on', simMode);
+  document.getElementById('sim-toggle-btn').classList.toggle('active', simMode);
+  document.getElementById('sim-toggle-txt').textContent = simMode ? 'Simulating...' : 'Simulate Market';
+  if(simMode) {
+    document.getElementById('k-default').textContent = '32.5%';
+    document.getElementById('k-pnl').textContent = '−₹26.0L';
+    document.getElementById('k-arpu').textContent = '₹1,340';
+  } else {
+    document.getElementById('k-default').textContent = '27.5%';
+    document.getElementById('k-pnl').textContent = '−₹20.4L';
+    document.getElementById('k-arpu').textContent = '₹1,840';
+  }
+}
+
+// ===== CREDIT RISK =====
+function updateLTI() {
+  const loan = parseInt(document.getElementById('loan-sl').value);
+  const inc = parseInt(document.getElementById('inc-sl').value);
+  document.getElementById('lti-ratio').textContent = (loan/inc).toFixed(2);
+}
+
+function predictRisk() {
+  const age = parseInt(document.getElementById('age-sl').value);
+  const inc = parseInt(document.getElementById('inc-sl').value);
+  const loan = parseInt(document.getElementById('loan-sl').value);
+  const credit = document.getElementById('credit-sel').value;
+  const emp = document.getElementById('emp-sel').value;
+  const lti = loan/inc;
+  const t = modelTerms(lti, credit, emp, inc, age);
+  const logit = -7.216923750596389 + t.reduce((s,x)=>s+x.val,0);
+  const p = 1/(1+Math.exp(-logit));
+  const score = Math.round(p*100);
+  const isHigh = p >= 0.5;
+  const box = document.getElementById('result-box');
+  box.style.display='block';
+  box.className = 'result-box ' + (isHigh?'high':'low');
+  document.getElementById('result-label').textContent = isHigh ? '🚨 High Risk Borrower' : '✅ Low Risk Borrower';
+  document.getElementById('result-label').className = 'result-lbl ' + (isHigh?'high':'low');
+  document.getElementById('result-prob').textContent = 'Default probability: '+score+'%  ·  LTI ratio: '+lti.toFixed(2)+'  ·  logistic regression fitted on the workbook data';
+  updateFeatureBars(lti, credit, emp, inc, age);
+  renderXAI(lti, credit, emp, inc, age, score);
+}
+function modelTerms(lti, credit, emp, inc, age) {
+  return [
+    {label:'Loan-to-income ratio', val:4.330459804944339*lti, color:C.red},
+    {label:'Credit history', val:credit==='bad'?4.031710650506693:credit==='average'?2.0192572662320765:0, color:C.amber},
+    {label:'Employment status', val:emp==='unemployed'?3.5804480521018878:emp==='self'?0.42488808900267633:0, color:C.amber},
+    {label:'Annual income', val:-0.014494250073615145*(inc/1000), color:C.blue},
+    {label:'Age', val:-0.013629545639649035*age, color:'#6a8aaa'}
+  ];
+}
+function renderXAI(lti, credit, emp, inc, age, total) {
+  const items = modelTerms(lti, credit, emp, inc, age);
+  document.getElementById('xai-items').innerHTML = items.map(it => `
+    <div class="xai-item">
+      <div class="xai-lbl">${it.label}</div>
+      <div class="prog-bg" style="flex:1;"><div class="xai-bar" style="width:${Math.min(100,Math.abs(it.val)*8)}%;background:${it.color};height:8px;border-radius:4px;"></div></div>
+      <div class="xai-pct">${it.val>=0?'+':''}${it.val.toFixed(1)}</div>
+    </div>`).join('') + '<div class="xai-item"><div class="xai-lbl" style="font-size:9px;">Log-odds contributions (intercept -7.22)</div></div>';
+}
+function updateFeatureBars() {
+  const bars=[['LTI ratio',35,C.red],['Credit history',35,C.amber],['Employment status',23,C.amber],['Annual income',5,C.blue],['Age',2,'#6a8aaa']];
+  document.getElementById('feature-bars').innerHTML = bars.map(b=>`<div class="xai-item"><div class="xai-lbl">${b[0]}</div><div class="prog-bg" style="flex:1;"><div class="xai-bar" style="width:${b[1]*2.5}%;background:${b[2]};height:8px;border-radius:4px;"></div></div><div class="xai-pct">${b[1]}%</div></div>`).join('');
+}
+
+// ===== SCENARIO =====
+function updateSimulation() {
+  const intRate = parseInt(document.getElementById('sl-int').value);
+  const defRate = parseInt(document.getElementById('sl-def').value);
+  const growthRate = parseInt(document.getElementById('sl-grw').value);
+  const incLevel = parseInt(document.getElementById('sl-inc').value);
+  document.getElementById('sl-int-val').textContent = intRate+'%';
+  document.getElementById('sl-def-val').textContent = defRate+'%';
+  document.getElementById('sl-grw-val').textContent = growthRate+'%';
+  document.getElementById('sl-inc-val').textContent = '₹'+incLevel+'k';
+  const baseRev = 10.48;
+  const rev = +(baseRev * (1 + (growthRate-12)/100) * (intRate/12)).toFixed(1);
+  const npa = +(defRate/100 * 87.33 * 1.286).toFixed(1);
+  const profit = +(rev - npa).toFixed(1);
+  const stress = defRate > 20 ? '🔴 High' : defRate > 12 ? '🟡 Medium' : '🟢 Low';
+  document.getElementById('sim-rev').textContent = '₹'+rev+'L';
+  document.getElementById('sim-profit').textContent = profit>0?'₹'+profit+'L':'−₹'+Math.abs(profit)+'L';
+  document.getElementById('sim-npa').textContent = '₹'+npa+'L';
+  document.getElementById('sim-stress').textContent = stress;
+  document.getElementById('s-rev').textContent = '₹'+rev+'L';
+  document.getElementById('s-profit').textContent = profit>0?'₹'+profit+'L':'−₹'+Math.abs(profit)+'L';
+  document.getElementById('s-npa').textContent = defRate+'%';
+  document.getElementById('k-default').textContent = simMode ? defRate+'%' : '27.5%';
+}
+
+// ===== CHART RENDERING =====
+const months = ['Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'];
+const months6 = ['Sep','Oct','Nov','Dec','Jan','Feb'];
+
+function renderCharts(tab) {
+  if(tab==='kpi') {
+    new Chart(document.getElementById('growthChart'), {type:'line', data:{labels:months, datasets:[
+      {label:'Total Users',data:[105, 120, 132, 145, 160, 175, 188, 200],borderColor:C.blue,backgroundColor:C.blueFill,fill:true,tension:0.4,pointBackgroundColor:C.blue,pointRadius:4},
+      {label:'Active Users',data:[80, 91, 101, 113, 125, 135, 146, 157],borderColor:C.green,backgroundColor:C.greenFill,fill:true,tension:0.4,pointBackgroundColor:C.green,pointRadius:4}
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('revLoanChart'), {type:'bar', data:{labels:months, datasets:[
+      {label:'Revenue',data:[5.8, 6.5, 7.3, 8.1, 9.0, 9.4, 10.0, 10.5],backgroundColor:C.greenA,borderRadius:5},
+      {label:'Loans',data:[37.4, 45.7, 52.0, 58.2, 66.5, 74.9, 81.1, 87.3],backgroundColor:C.blueA,borderRadius:5}
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+v+'L'}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('defaultTrendChart'), {type:'line', data:{labels:months, datasets:[{label:'Default Rate %',data:[25.9, 26.3, 26.9, 27.1, 27.2, 27.4, 27.3, 27.5],borderColor:C.red,backgroundColor:C.redFill,fill:true,tension:0.4,pointBackgroundColor:C.red,pointRadius:4}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'},min:15,max:35},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('pnlChart'), {type:'bar', data:{labels:['Interest income','NPA loss','Net P&L'], datasets:[{label:'P&L (₹L)',data:[10.5,-30.9,-20.4],backgroundColor:ctx=>ctx.raw>=0?C.greenA:C.redA,borderRadius:5}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+v+'L'}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='unit') {
+    new Chart(document.getElementById('ltvCacChart'), {type:'bar', data:{labels:['High Spenders','Frequent','Mid-Tier','Low Activity'], datasets:[
+      {label:'LTV (₹)',data:[38400,22000,14800,6200],backgroundColor:[C.blueA,C.greenA,C.amberA,'rgba(217,48,37,0.85)'],borderRadius:6},
+      {label:'CAC (₹)',data:[1200,840,620,380],backgroundColor:['rgba(18,82,163,0.3)','rgba(40,168,88,0.3)','rgba(200,112,0,0.3)','rgba(217,48,37,0.3)'],borderRadius:6},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+v.toLocaleString('en-IN')}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('cacChannelChart'), {type:'doughnut', data:{labels:['Organic','Social Media','Referral','Paid Ads','Email'], datasets:[{data:[520,940,380,1240,760],backgroundColor:[C.green,C.blue,C.teal,C.amber,C.red],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{labels:{color:textColor,font:{size:11}}}}}});
+  }
+  if(tab==='portfolio') {
+    new Chart(document.getElementById('riskPieChart'), {type:'doughnut', data:{labels:['Low','Moderate','High','Very High'], datasets:[{data:[135, 9, 15, 41],backgroundColor:[C.green,C.blue,C.amber,C.red],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});
+    new Chart(document.getElementById('segDefaultChart'), {type:'bar', data:{labels:['Employed','Self-Employed','Unemployed'], datasets:[{label:'Default Rate %',data:[9.8, 21.4, 49.3],backgroundColor:[C.green,C.amber,C.red],borderRadius:6}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'},max:60},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('loanDistChart'), {type:'bar', data:{labels:['<₹10k','₹10-20k','₹20-35k','₹35-50k','>₹50k'], datasets:[{label:'# Loans',data:[12, 24, 43, 37, 84],backgroundColor:C.blueA,borderRadius:6}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('riskCompChart'), {type:'bar', data:{labels:['Low Risk','Moderate','High','Very High'], datasets:[
+      {label:'# Loans',data:[119,70,40,19],backgroundColor:[C.green,C.blue,C.amber,C.red],borderRadius:6},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='funnel') {
+    new Chart(document.getElementById('funnelChart'), {type:'bar', data:{labels:['Visitors','Signups','Active','Loan-ready'], datasets:[{label:'Users',data:[1000,200,157,64],backgroundColor:[C.blueA,'rgba(13,122,106,0.85)',C.greenA,'rgba(13,122,106,0.7)'],borderRadius:8}]}, options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:textColor}},y:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('channelCvrChart'), {type:'bar', data:{labels:['Organic Search','Social Media','Referral','Paid Ads','Email Campaign'], datasets:[
+      {label:'Signup CVR %',data:[24,18,38,12,22],backgroundColor:C.blueA,borderRadius:5},
+      {label:'Activation CVR %',data:[32,28,42,18,35],backgroundColor:C.greenA,borderRadius:5},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='risk') {
+    updateFeatureBars(0.5,'good','employed',50000,35);
+    new Chart(document.getElementById('creditChart'), {type:'bar', data:{labels:['Good','Average','Bad'], datasets:[{label:'Default %',data:[10.0, 31.8, 48.1],backgroundColor:[C.green,C.amber,C.red],borderRadius:6,borderSkipped:false}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'},max:100},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='seg') {
+    new Chart(document.getElementById('spendChart'), {type:'bar', data:{labels:['<₹10k','₹10-20k','₹20-35k','₹35-50k','>₹50k'], datasets:[
+      {label:'High Spenders',data:[0, 0, 0, 62, 0],backgroundColor:C.blue,borderRadius:4,stack:'s'},
+      {label:'Frequent',data:[9, 7, 14, 0, 0],backgroundColor:C.green,borderRadius:4,stack:'s'},
+      {label:'Low Activity',data:[5, 9, 4, 0, 0],backgroundColor:C.amber,borderRadius:4,stack:'s'},
+      {label:'Mid-Tier',data:[31, 30, 29, 0, 0],backgroundColor:'#6a8aaa',borderRadius:4,stack:'s'},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{stacked:true,grid:{color:gridColor},ticks:{color:textColor}},x:{stacked:true,grid:{display:false},ticks:{color:textColor,font:{size:10}}}}}});
+    new Chart(document.getElementById('pieChart'), {type:'doughnut', data:{labels:['High Spenders','Frequent','Low Activity','Mid-Tier'], datasets:[{data:[31, 15, 9, 45],backgroundColor:[C.blue,C.green,C.amber,'#6a8aaa'],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{labels:{color:textColor,font:{size:11}}}}}});
+    new Chart(document.getElementById('bubbleChart'), {type:'bubble', data:{datasets:[{label:'High Spenders',data:[{x: 21, y: 85431, r: 4}, {x: 10, y: 58606, r: 4}, {x: 13, y: 10616, r: 4}, {x: 26, y: 10816, r: 4}, {x: 28, y: 2050, r: 4}, {x: 21, y: 55619, r: 4}, {x: 4, y: 32913, r: 4}, {x: 21, y: 90093, r: 4}, {x: 8, y: 67364, r: 4}, {x: 24, y: 29757, r: 4}, {x: 24, y: 24262, r: 4}, {x: 19, y: 38197, r: 4}, {x: 11, y: 82856, r: 4}, {x: 9, y: 55554, r: 4}, {x: 9, y: 72750, r: 4}, {x: 19, y: 54028, r: 4}, {x: 19, y: 60504, r: 4}, {x: 27, y: 17674, r: 4}, {x: 17, y: 83560, r: 4}, {x: 29, y: 23874, r: 4}, {x: 17, y: 43642, r: 4}, {x: 15, y: 25931, r: 4}, {x: 12, y: 94377, r: 4}, {x: 8, y: 64772, r: 4}, {x: 23, y: 81121, r: 4}, {x: 22, y: 33742, r: 4}, {x: 16, y: 69669, r: 4}, {x: 25, y: 3972, r: 4}, {x: 15, y: 9903, r: 4}, {x: 26, y: 41755, r: 4}, {x: 26, y: 45648, r: 4}, {x: 26, y: 30561, r: 4}, {x: 21, y: 67675, r: 4}, {x: 7, y: 96826, r: 4}, {x: 19, y: 83624, r: 4}, {x: 16, y: 33130, r: 4}, {x: 27, y: 26292, r: 4}, {x: 23, y: 86206, r: 4}, {x: 18, y: 2469, r: 4}, {x: 20, y: 53947, r: 4}, {x: 18, y: 48874, r: 4}, {x: 10, y: 74553, r: 4}, {x: 14, y: 54302, r: 4}, {x: 24, y: 47638, r: 4}, {x: 12, y: 2719, r: 4}, {x: 13, y: 77236, r: 4}, {x: 2, y: 36509, r: 4}, {x: 3, y: 42534, r: 4}, {x: 5, y: 92241, r: 4}, {x: 23, y: 91659, r: 4}, {x: 12, y: 33062, r: 4}, {x: 24, y: 95756, r: 4}, {x: 29, y: 66672, r: 4}, {x: 1, y: 37311, r: 4}, {x: 13, y: 63852, r: 4}, {x: 10, y: 1007, r: 4}, {x: 23, y: 47517, r: 4}, {x: 3, y: 29257, r: 4}, {x: 27, y: 13281, r: 4}, {x: 13, y: 98875, r: 4}, {x: 18, y: 91357, r: 4}, {x: 29, y: 83807, r: 4}],backgroundColor:'rgba(18,82,163,0.7)'},{label:'Frequent',data:[{x: 25, y: 33039, r: 4}, {x: 26, y: 24574, r: 4}, {x: 28, y: 12676, r: 4}, {x: 26, y: 57775, r: 4}, {x: 29, y: 90816, r: 4}, {x: 27, y: 97419, r: 4}, {x: 23, y: 806, r: 4}, {x: 26, y: 62211, r: 4}, {x: 27, y: 40042, r: 4}, {x: 26, y: 14199, r: 4}, {x: 25, y: 62483, r: 4}, {x: 29, y: 18297, r: 4}, {x: 25, y: 7657, r: 4}, {x: 27, y: 83300, r: 4}, {x: 25, y: 65160, r: 4}, {x: 23, y: 17602, r: 4}, {x: 24, y: 46542, r: 4}, {x: 25, y: 41873, r: 4}, {x: 27, y: 3020, r: 4}, {x: 23, y: 11303, r: 4}, {x: 26, y: 99616, r: 4}, {x: 29, y: 69274, r: 4}, {x: 27, y: 49708, r: 4}, {x: 28, y: 22890, r: 4}, {x: 26, y: 57932, r: 4}, {x: 23, y: 92124, r: 4}, {x: 25, y: 31966, r: 4}, {x: 23, y: 61246, r: 4}, {x: 27, y: 5084, r: 4}, {x: 29, y: 7491, r: 4}],backgroundColor:'rgba(40,168,88,0.7)'},{label:'Low Activity',data:[{x: 21, y: 3430, r: 4}, {x: 17, y: 74691, r: 4}, {x: 22, y: 97659, r: 4}, {x: 1, y: 80435, r: 4}, {x: 9, y: 73781, r: 4}, {x: 8, y: 66262, r: 4}, {x: 17, y: 46600, r: 4}, {x: 5, y: 28831, r: 4}, {x: 2, y: 33660, r: 4}, {x: 17, y: 50106, r: 4}, {x: 5, y: 25559, r: 4}, {x: 13, y: 86988, r: 4}, {x: 16, y: 84082, r: 4}, {x: 7, y: 19129, r: 4}, {x: 22, y: 92108, r: 4}, {x: 15, y: 19623, r: 4}, {x: 11, y: 18787, r: 4}, {x: 13, y: 72545, r: 4}],backgroundColor:'rgba(200,112,0,0.7)'},{label:'Mid-Tier',data:[{x: 2, y: 73972, r: 4}, {x: 12, y: 62187, r: 4}, {x: 13, y: 12984, r: 4}, {x: 7, y: 83691, r: 4}, {x: 17, y: 50072, r: 4}, {x: 14, y: 32733, r: 4}, {x: 2, y: 85680, r: 4}, {x: 22, y: 33933, r: 4}, {x: 11, y: 24951, r: 4}, {x: 1, y: 32413, r: 4}, {x: 19, y: 34801, r: 4}, {x: 19, y: 40600, r: 4}, {x: 11, y: 35400, r: 4}, {x: 8, y: 4494, r: 4}, {x: 11, y: 80688, r: 4}, {x: 4, y: 89431, r: 4}, {x: 7, y: 43001, r: 4}, {x: 3, y: 45028, r: 4}, {x: 2, y: 37573, r: 4}, {x: 15, y: 56638, r: 4}, {x: 22, y: 34636, r: 4}, {x: 22, y: 80097, r: 4}, {x: 5, y: 48280, r: 4}, {x: 4, y: 54842, r: 4}, {x: 15, y: 56979, r: 4}, {x: 20, y: 81470, r: 4}, {x: 3, y: 41844, r: 4}, {x: 20, y: 64754, r: 4}, {x: 11, y: 34157, r: 4}, {x: 17, y: 77129, r: 4}, {x: 13, y: 61665, r: 4}, {x: 2, y: 27376, r: 4}, {x: 2, y: 81412, r: 4}, {x: 21, y: 50948, r: 4}, {x: 1, y: 76898, r: 4}, {x: 11, y: 30448, r: 4}, {x: 8, y: 26172, r: 4}, {x: 10, y: 42874, r: 4}, {x: 7, y: 84386, r: 4}, {x: 3, y: 25425, r: 4}, {x: 3, y: 26685, r: 4}, {x: 18, y: 24578, r: 4}, {x: 12, y: 7906, r: 4}, {x: 12, y: 61413, r: 4}, {x: 6, y: 7287, r: 4}, {x: 12, y: 75758, r: 4}, {x: 5, y: 59720, r: 4}, {x: 12, y: 34701, r: 4}, {x: 10, y: 97820, r: 4}, {x: 17, y: 88801, r: 4}, {x: 16, y: 29192, r: 4}, {x: 19, y: 42520, r: 4}, {x: 21, y: 58762, r: 4}, {x: 6, y: 80199, r: 4}, {x: 8, y: 21754, r: 4}, {x: 18, y: 70831, r: 4}, {x: 12, y: 94661, r: 4}, {x: 9, y: 85956, r: 4}, {x: 15, y: 9516, r: 4}, {x: 10, y: 2396, r: 4}, {x: 17, y: 1591, r: 4}, {x: 21, y: 71719, r: 4}, {x: 7, y: 86231, r: 4}, {x: 14, y: 7314, r: 4}, {x: 9, y: 65082, r: 4}, {x: 8, y: 51756, r: 4}, {x: 18, y: 97624, r: 4}, {x: 7, y: 22534, r: 4}, {x: 3, y: 63620, r: 4}, {x: 7, y: 68344, r: 4}, {x: 17, y: 49138, r: 4}, {x: 3, y: 78249, r: 4}, {x: 8, y: 48845, r: 4}, {x: 7, y: 75713, r: 4}, {x: 15, y: 87263, r: 4}, {x: 17, y: 60461, r: 4}, {x: 4, y: 75418, r: 4}, {x: 22, y: 34832, r: 4}, {x: 18, y: 12987, r: 4}, {x: 16, y: 31575, r: 4}, {x: 12, y: 70981, r: 4}, {x: 2, y: 76242, r: 4}, {x: 10, y: 87272, r: 4}, {x: 2, y: 42207, r: 4}, {x: 13, y: 1435, r: 4}, {x: 3, y: 26660, r: 4}, {x: 7, y: 82197, r: 4}, {x: 14, y: 13507, r: 4}, {x: 20, y: 72595, r: 4}, {x: 17, y: 45539, r: 4}],backgroundColor:'rgba(106,138,170,0.7)'}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Login days/month',color:textColor},grid:{color:gridColor},ticks:{color:textColor}},y:{title:{display:true,text:'Wallet balance (₹)',color:textColor},grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+Math.round(v/1000)+'k'}}}}});
+  }
+  if(tab==='txn') {
+    new Chart(document.getElementById('txnCatChart'), {type:'doughnut', data:{labels:['UPI Payments','EMI/Loans','Recharges','Investments','Food/Shopping','Other'], datasets:[{data:[34,22,16,14,9,5],backgroundColor:[C.blue,C.green,C.teal,C.amber,'#6941c6','#6a8aaa'],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{labels:{color:textColor,font:{size:11}}}}}});
+    new Chart(document.getElementById('txnFreqChart'), {type:'bar', data:{labels:['1-10','11-20','21-30','31-40','41-50','50+'], datasets:[{label:'Users',data:[88,142,188,172,120,102],backgroundColor:C.blueA,borderRadius:6}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor}},x:{grid:{display:false},ticks:{color:textColor,font:{size:10}}}}}});
+    new Chart(document.getElementById('txnSegChart'), {type:'bar', data:{labels:['High Spenders','Frequent','Mid-Tier','Low Activity'], datasets:[{label:'Avg Txn Value (₹)',data:[3840,1620,1820,620],backgroundColor:[C.blue,C.green,C.amber,C.red],borderRadius:6}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+v.toLocaleString('en-IN')}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='scenario') {
+    const sc = new Chart(document.getElementById('scenarioChart'), {type:'line', data:{labels:['Base','Interest+2%','Default+5%','Growth-5%','Stress Test'], datasets:[
+      {label:'Revenue',data:[14.7,16.2,14.7,12.4,9.8],borderColor:C.green,backgroundColor:C.greenFill,fill:true,tension:0.4,pointBackgroundColor:C.green,pointRadius:5},
+      {label:'Profit',data:[8.2,9.4,5.8,6.2,2.1],borderColor:C.blue,backgroundColor:C.blueFill,fill:true,tension:0.4,pointBackgroundColor:C.blue,pointRadius:5},
+      {label:'NPA',data:[3.5,3.5,7.4,2.8,11.2],borderColor:C.red,backgroundColor:C.redFill,fill:true,tension:0.4,pointBackgroundColor:C.red,pointRadius:5},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+v+'L'}},x:{grid:{color:gridColor},ticks:{color:textColor}}}}});
+  }
+  if(tab==='benchmark') {
+    new Chart(document.getElementById('benchDefaultChart'), {type:'bar', data:{labels:['CredIntel','FinTech Avg','Best in Class'], datasets:[{label:'Default Rate %',data:[8.4,12.6,4.2],backgroundColor:[C.green,C.amber,C.blue],borderRadius:8}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'},max:20},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('benchRadarChart'), {type:'radar', data:{labels:['LTV:CAC','Default Rate','ARPU','Payback','DAU/MAU','Churn'], datasets:[
+      {label:'CredIntel',data:[90,74,82,78,68,80],borderColor:C.blue,backgroundColor:'rgba(18,82,163,0.15)',pointBackgroundColor:C.blue},
+      {label:'Industry',data:[55,50,65,55,62,60],borderColor:C.amber,backgroundColor:'rgba(200,112,0,0.1)',pointBackgroundColor:C.amber},
+    ]}, options:{responsive:true,maintainAspectRatio:false,scales:{r:{grid:{color:gridColor},ticks:{display:false},pointLabels:{color:textColor,font:{size:10}}}},plugins:{legend:{labels:{color:textColor,font:{size:11}}}}}});
+  }
+  if(tab==='ab') {
+    const abLabels = ['Day 1','Day 3','Day 5','Day 7','Day 10','Day 14','Day 18','Day 21'];
+    new Chart(document.getElementById('abConvChart'), {type:'line', data:{labels:abLabels, datasets:[
+      {label:'Variant A ₹149',data:[7.2,7.8,8.4,8.9,9.0,9.1,9.2,9.2],borderColor:C.blue,backgroundColor:C.blueFill,fill:true,tension:0.4,pointBackgroundColor:C.blue,pointRadius:4},
+      {label:'Variant B ₹99',data:[12.4,14.2,15.8,16.8,17.4,18.0,18.2,18.4],borderColor:C.green,backgroundColor:C.greenFill,fill:true,tension:0.4,pointBackgroundColor:C.green,pointRadius:4},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('abRevChart'), {type:'bar', data:{labels:['Week 1','Week 2','Week 3'], datasets:[
+      {label:'₹149 Revenue',data:[2100,2300,2450],backgroundColor:C.blueA,borderRadius:5},
+      {label:'₹99 Revenue',data:[2800,3200,3500],backgroundColor:C.greenA,borderRadius:5},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>'₹'+v}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='persona') {
+    new Chart(document.getElementById('personaChart'), {type:'bar', data:{labels:['Aryan (Student)','Priya (Gig)','Rohan (Salaried)','Sneha (Freelance)'], datasets:[{label:'Risk Score',data:[62,78,18,42],backgroundColor:[C.amber,C.red,C.green,C.teal],borderRadius:8}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor},max:100},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='churn') {
+    new Chart(document.getElementById('retentionChart'), {type:'line', data:{labels:['Month 1','Month 2','Month 3','Month 4','Month 5','Month 6','Month 9','Month 12'], datasets:[
+      {label:'High Spenders',data:[100,98,96,94,93,92,90,88],borderColor:C.blue,tension:0.4,pointBackgroundColor:C.blue,pointRadius:3,fill:false},
+      {label:'Frequent',data:[100,95,90,86,82,80,75,72],borderColor:C.green,tension:0.4,pointBackgroundColor:C.green,pointRadius:3,fill:false},
+      {label:'Mid-Tier',data:[100,90,82,74,68,62,52,44],borderColor:C.amber,tension:0.4,pointBackgroundColor:C.amber,pointRadius:3,fill:false},
+      {label:'Low Activity',data:[100,72,54,42,34,28,18,12],borderColor:C.red,tension:0.4,pointBackgroundColor:C.red,pointRadius:3,fill:false},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'},min:0,max:105},x:{grid:{display:false},ticks:{color:textColor}}}}});
+    new Chart(document.getElementById('churnTrendChart'), {type:'bar', data:{labels:months6, datasets:[
+      {label:'Churned Users',data:[88,76,82,72,68,62],backgroundColor:C.redA,borderRadius:5},
+      {label:'Recovered',data:[42,38,46,44,48,52],backgroundColor:C.greenA,borderRadius:5},
+    ]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:textColor,font:{size:11}}}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor}},x:{grid:{display:false},ticks:{color:textColor}}}}});
+  }
+  if(tab==='insights') {
+    new Chart(document.getElementById('incomeChart'), {type:'line', data:{labels:['<₹20k','₹20-30k','₹30-45k','₹45-60k','₹60-80k','₹80k+'], datasets:[{label:'Default Rate %',data:[68,52,38,22,12,5],borderColor:C.red,backgroundColor:C.redFill,fill:true,tension:0.4,pointBackgroundColor:C.red,pointRadius:5}]}, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:gridColor},ticks:{color:textColor,callback:v=>v+'%'},max:80,min:0},x:{grid:{color:gridColor},ticks:{color:textColor}}}}});
+  }
+}
+
+// Init KPI tab on load
+window.addEventListener('load', () => { renderCharts('risk'); chartInit.risk=true; });
+window.addEventListener('load',function(){updateSimulation();});
+</script>
+</body>
+</html>
